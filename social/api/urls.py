@@ -1,10 +1,11 @@
 from django.urls import path, re_path, include
-from .views import ChatAPIView, UserChatsAPIView, UserAPIView, MessageAPIView
+from .views import ChatAPIView, UserApiView, UserChatsAPIView, UserListAPIView, MessageAPIView
 
 
 urlpatterns = [
-    path('userList', UserAPIView.as_view()),
+    path('userList', UserListAPIView.as_view()),
     path('chatList', UserChatsAPIView.as_view()),
+    path('user', UserApiView.as_view()), 
     path('chat', ChatAPIView.as_view()),
     path('messages', MessageAPIView.as_view()),
     path('auth/', include('djoser.urls')),

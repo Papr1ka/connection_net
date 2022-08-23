@@ -12,7 +12,7 @@ class UserModelSerializer(serializers.ModelSerializer):
     user = UserDjangoSerizlizer()
     class Meta:
         model = UserModel
-        fields = ('id', 'user')
+        fields = ('id', 'user', 'avatar_image')
 
 
 class ChatSerializer(serializers.ModelSerializer):
@@ -26,7 +26,7 @@ class UserChatsSerializer(serializers.ModelSerializer):
     chats = ChatSerializer(many=True)
     class Meta:
         model = UserModel
-        fields = ('chats', )
+        fields = ('chats',)
 
 
 class MessageSerizlizer(serializers.ModelSerializer):

@@ -4,14 +4,16 @@ from rest_framework import generics, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import ChatModel, MessageModel, UserModel
-from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer, UserModelSerializer
+from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer, UserDjangoSerizlizer, UserModelSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from django.core import serializers
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.contrib.auth.models import User
 
 # Create your views here.
 
-class UserAPIView(generics.ListAPIView):
+class UserListAPIView(generics.ListAPIView):
     queryset = UserModel.objects.all()
     serializer_class = UserModelSerializer
     permission_classes = (IsAuthenticated, )
@@ -19,6 +21,41 @@ class UserAPIView(generics.ListAPIView):
     def perform_create(self, serializer):
         user=self.request.user
         serializer.save(user=user)
+
+
+class UserApiView(generics.RetrieveUpdateAPIView):
+    queryset = UserModel.objects.all()
+    serializer_class = UserModelSerializer
+    parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (IsAuthenticated, )
+    http_method_names = ['get', 'put', 'head']
+    
+    def get(self, request):
+        usermodel = UserModel.objects.get(id=request.user.id)
+        return Response(UserModelSerializer(usermodel).data)
+    
+    def put(self, request):
+        new_username = request.data.get('username', None)
+        if new_username:
+            user_exist = User.objects.filter(username=new_username).exists()
+            if user_exist:
+                return Response({'error': 'User with this username is alredy exists'})
+            else:
+                instance = User.objects.get(pk=request.user.pk)
+                
+                serializer = UserDjangoSerizlizer(instance=instance, data={'username': new_username})
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                
+                return Response({'put': serializer.data})
+        
+        new_avatar = request.data.get('avatar', None)
+        if new_avatar:
+            instance = self.queryset.get(pk=request.user.pk)
+            instance.avatar_image = new_avatar
+            instance.save()
+            return Response({'put': UserModelSerializer(instance).data})
+        return Response({'statuscode': '200'})
 
 
 class UserChatsAPIView(generics.ListCreateAPIView):
@@ -29,7 +66,6 @@ class UserChatsAPIView(generics.ListCreateAPIView):
     def get(self, request):
         usermodel = UserModel.objects.get(id=request.user.id)
         if usermodel:
-            
             new_chats = {'chats': []}
             chats = UserChatsSerializer(usermodel).data
             
@@ -44,12 +80,17 @@ class UserChatsAPIView(generics.ListCreateAPIView):
                     last_message = []
                 users = i['users']
                 users.remove(request.user.id)
-                contact_username = UserModel.objects.get(id=users[0]).user.username
+                user = UserModel.objects.get(id=users[0])
+                contact_username = user.user.username
+                if user.avatar_image:
+                    avatar = user.avatar_image.url
+                else:
+                    avatar = None
                 new_chats['chats'].append({
                     'id': i['id'],
                     'messages': [] if messages_length == 0 else i['messages'][:min(50, messages_length)],
                     'created_at': i['created_at'],
-                    'users': [{'id': users[0], 'username': contact_username}],
+                    'users': [{'id': users[0], 'username': contact_username, 'avatar_image': avatar}],
                     'last_message': last_message,
                 })
             
@@ -63,12 +104,8 @@ class ChatAPIView(generics.CreateAPIView):
     permission_classes = (IsAuthenticated, )
     
     def post(self, request):
-        print(request.data['users'])
-        print(request.user.id)
         if request.data['users'] == str(request.user.id):
             return Response({'error': 'Invalid user list'})
-        print(request.data)
-        print(type(request.data))
         #a = ChatModel.objects.filter(users__iexact=[request.data['users'][0], request.user.id]).first()
         a = ChatModel.objects.filter(users__in=[request.data['users']]).distinct().filter(users__in=[str(request.user.id)]).distinct()
         if a:
@@ -157,7 +194,7 @@ class MessageAPIView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         r = serializer.save()
 
-        return Response({'message': serializer.data})
+        return Response(serializer.data)
         
     
 

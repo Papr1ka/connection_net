@@ -1,9 +1,17 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
+
+
+def user_directory_path(instance, filename):
+    return 'user_{0}/{1}'.format(instance.user.id, filename)
 
 class UserModel(models.Model):
     #username, password, email include in user
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="account")
+    avatar_image = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
     chats = models.ManyToManyField('ChatModel', blank=True)
     
     def __str__(self):
@@ -11,7 +19,6 @@ class UserModel(models.Model):
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        print(self.chats, self.chats.count())
 
 
 class ChatModel(models.Model):
