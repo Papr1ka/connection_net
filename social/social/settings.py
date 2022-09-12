@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api.apps.ApiConfig',
+    'channels',
     'rest_framework',
     'rest_framework.authtoken',
     'djoser',
@@ -74,7 +75,15 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = 'social.asgi.application'
 WSGI_APPLICATION = 'social.wsgi.application'
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 
 # Database

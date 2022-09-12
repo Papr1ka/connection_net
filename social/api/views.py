@@ -1,13 +1,8 @@
-from email import message
-from django.shortcuts import render
-from rest_framework import generics, serializers
-from rest_framework.views import APIView
+from rest_framework import generics
 from rest_framework.response import Response
 from .models import ChatModel, MessageModel, UserModel
 from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer, UserDjangoSerizlizer, UserModelSerializer
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
-from django.core import serializers
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth.models import User
 
@@ -195,34 +190,3 @@ class MessageAPIView(generics.ListCreateAPIView):
         r = serializer.save()
 
         return Response(serializer.data)
-        
-    
-
-
-"""class UserAPIView(APIView):
-    def get(self, request):
-        users = User.objects.all()
-        return Response({'users': UserSerializer(users, many=True).data})
-    
-    def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        serializer.save()
-        
-        return Response({'post': serializer.data})
-    
-    def put(self, request, *args, **kwargs):
-        pk = kwargs.get("pk", None)
-        if not pk:
-            return Response({"error": "Method PUT is not allowed"})
-        
-        try:
-            instanse = User.objects.get(pk=pk)
-        except:
-            return Response({"error": "Object does not exists"})
-
-        serializer = UserSerializer(data=request.data, instance=instanse)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'post': serializer.data})"""

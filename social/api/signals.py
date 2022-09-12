@@ -12,11 +12,8 @@ def create_profile(instance, created, **kwargs):
 
 @receiver(pre_save, sender=UserModel)
 def delete_old_image(instance, **kwargs):
-    print(instance.avatar_image.name)
-    print(instance, kwargs)
+    pass
 
 @receiver(post_save, sender=UserModel)
 def delete_old_image(instance, created, **kwargs):
-    print(instance.avatar_image.name)
-    print(instance, kwargs)
-    print(created)
+    pass
