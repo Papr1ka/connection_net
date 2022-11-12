@@ -5,6 +5,7 @@ from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer,
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth.models import User
+from rest_framework.views import APIView
 
 # Create your views here.
 
@@ -17,6 +18,21 @@ class UserListAPIView(generics.ListAPIView):
         user=self.request.user
         serializer.save(user=user)
 
+class UserSearchApiView(generics.RetrieveAPIView):
+    queryset = UserModel.objects.all()
+    serializer_class = UserModelSerializer
+    def get(self, request):
+        username = request.data.get("username")
+        if not username:
+            return Response({'Username': "That field is required"}, status=500)
+        users = self.get_queryset()
+        try:
+            user = UserModel.objects.get(user__username=username)
+        except UserModel.DoesNotExist:
+            return Response({'User': "Does not exists"}, status=500)
+        return Response(UserModelSerializer(user).data)
+        
+        
 
 class UserApiView(generics.RetrieveUpdateAPIView):
     queryset = UserModel.objects.all()
@@ -26,7 +42,7 @@ class UserApiView(generics.RetrieveUpdateAPIView):
     http_method_names = ['get', 'put', 'head']
     
     def get(self, request):
-        usermodel = UserModel.objects.get(id=request.user.id)
+        usermodel = self.get_queryset().get(id=request.user.id)
         return Response(UserModelSerializer(usermodel).data)
     
     def put(self, request):
