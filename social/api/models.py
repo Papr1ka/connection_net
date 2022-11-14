@@ -13,6 +13,8 @@ class UserModel(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="account")
     avatar_image = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
     chats = models.ManyToManyField('ChatModel', blank=True)
+    status = models.CharField(max_length=200, blank=True)
+    display_name = models.CharField(max_length=40, blank=True)
     
     def __str__(self):
         return self.user.username

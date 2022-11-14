@@ -33,6 +33,7 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
     def get_chat(self, pk: int) -> Union[ChatModel, None]:
         try:
             chat = ChatModel.objects.get(pk=pk)
+            return chat
         except ChatModel.DoesNotExist:
             return None
     
@@ -85,6 +86,7 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
         """
         Отправка события изменения конкретного сообщения всем подписанным на это пользователям
         """
+        message['event'] = "on_message_create"
         await self.send_json(message)
 
     @message_activity.groups_for_signal

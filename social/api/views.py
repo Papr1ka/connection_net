@@ -5,6 +5,7 @@ from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer,
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth.models import User
+from rest_framework.views import APIView
 
 # Create your views here.
 
@@ -17,6 +18,25 @@ class UserListAPIView(generics.ListAPIView):
         user=self.request.user
         serializer.save(user=user)
 
+class UserSearchApiView(generics.RetrieveAPIView):
+    queryset = UserModel.objects.all()
+    serializer_class = UserModelSerializer
+    permission_classes = (IsAuthenticated, )
+    def get(self, request):
+        username = request.data.get("username")
+        if not username:
+            return Response({'Username': "That field is required"}, status=500)
+        try:
+            user = UserModel.objects.all().filter(user__username__icontains=username)
+            print(user)
+        except UserModel.DoesNotExist:
+            return Response({'User': "Does not exists"}, status=500)
+        return Response(UserModelSerializer(user, many=True).data)
+        
+class UserGetApiView(generics.RetrieveAPIView):
+    queryset = UserModel.objects.all()
+    serializer_class = UserModelSerializer
+    permission_classes = (IsAuthenticated, )
 
 class UserApiView(generics.RetrieveUpdateAPIView):
     queryset = UserModel.objects.all()
@@ -26,7 +46,7 @@ class UserApiView(generics.RetrieveUpdateAPIView):
     http_method_names = ['get', 'put', 'head']
     
     def get(self, request):
-        usermodel = UserModel.objects.get(id=request.user.id)
+        usermodel = self.get_queryset().get(id=request.user.id)
         return Response(UserModelSerializer(usermodel).data)
     
     def put(self, request):
@@ -117,7 +137,7 @@ class ChatAPIView(generics.CreateAPIView):
         user2 = UserModel.objects.get(id=request.data['users'][0])
         user2.chats.add(r)
         
-        return Response({'post': serializer.data})
+        return Response(serializer.data)
 
 
 class MessageAPIView(generics.ListCreateAPIView):
