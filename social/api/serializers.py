@@ -14,6 +14,11 @@ class UserModelSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'avatar_image', 'status', 'display_name')
 
 
+class UserModelUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ('status', 'display_name')
+
 class ChatSerializer(serializers.ModelSerializer):
     messages = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     class Meta:

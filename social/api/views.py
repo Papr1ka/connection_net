@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.response import Response
 from .models import ChatModel, MessageModel, UserModel
-from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer, UserDjangoSerizlizer, UserModelSerializer
+from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer, UserDjangoSerizlizer, UserModelSerializer, UserModelUpdateSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth.models import User
@@ -33,7 +33,7 @@ class UserSearchApiView(generics.RetrieveAPIView):
             return Response({'User': "Does not exists"}, status=500)
         return Response(UserModelSerializer(user, many=True).data)
         
-class UserGetApiView(generics.RetrieveAPIView):
+class UserGetApiView(generics.RetrieveUpdateAPIView):
     queryset = UserModel.objects.all()
     serializer_class = UserModelSerializer
     permission_classes = (IsAuthenticated, )
@@ -47,7 +47,12 @@ class UserApiView(generics.RetrieveUpdateAPIView):
     
     def get(self, request):
         usermodel = self.get_queryset().get(id=request.user.id)
-        return Response(UserModelSerializer(usermodel).data)
+        data = UserModelSerializer(usermodel).data
+        if usermodel.avatar_image:
+            data.update({
+                'avatar_image': request.build_absolute_uri(usermodel.avatar_image.url)
+            })
+        return Response(data)
     
     def put(self, request):
         new_username = request.data.get('username', None)
@@ -63,6 +68,20 @@ class UserApiView(generics.RetrieveUpdateAPIView):
                 serializer.save()
                 
                 return Response({'put': serializer.data})
+        
+        new_display_name = request.data.get("display_name", None)
+        if new_display_name:
+            instance = self.queryset.get(pk=request.user.pk)
+            serializer = UserModelUpdateSerializer(instance=instance, data={'display_name': new_display_name})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        
+        new_status = request.data.get("status", None)
+        if new_status:
+            instance = self.queryset.get(pk=request.user.pk)
+            serializer = UserModelUpdateSerializer(instance=instance, data={'status': new_status})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
         
         new_avatar = request.data.get('avatar', None)
         if new_avatar:
@@ -105,7 +124,7 @@ class UserChatsAPIView(generics.ListCreateAPIView):
                     'id': i['id'],
                     'messages': [] if messages_length == 0 else i['messages'][:min(50, messages_length)],
                     'created_at': i['created_at'],
-                    'users': [{'id': users[0], 'username': contact_username, 'avatar_image': avatar}],
+                    'users': [{'id': users[0], 'username': contact_username, 'avatar_image': request.build_absolute_uri(avatar) if avatar else ''}],
                     'last_message': last_message,
                 })
             
