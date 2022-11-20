@@ -6,8 +6,8 @@ from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.observer.generics import (ObserverModelInstanceMixin, action)
 from djangochannelsrestframework.observer import model_observer
 
-from .models import ChatModel, MessageModel
-from .serializers import MessageSerizlizer, UserChatsIdSerializer
+from .models import ChatModel, MessageModel, UserModel
+from .serializers import ChatSerializer, MessageSerizlizer, UserChatsIdSerializer, UserChatsSerializer
 from django.contrib.auth.models import AnonymousUser
 
 from typing import Union
@@ -28,6 +28,7 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
         for i in user_chats:
             i = i['id']
             await self.subscribe_to_messages_in_chat(i)
+        await self.subscribe_to_new_chat()
     
     @database_sync_to_async
     def get_chat(self, pk: int) -> Union[ChatModel, None]:
@@ -102,3 +103,35 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
     @message_activity.serializer
     def message_activity(self, instance: MessageModel, action, **kwargs) -> dict:
         return dict(data=MessageSerizlizer(instance).data, action=action.value, pk=instance.pk)
+
+    
+    async def subscribe_to_new_chat(self):
+        print(self.scope['user'], "subscribed to self")
+        """
+        Подписаться на оповещения об изменении Chat.messages с id = pk
+        """
+        await self.chat_activity.subscribe(user=1)
+    
+    
+    
+    @model_observer(UserModel)
+    async def chat_activity(self, chat, observer=None, **kwargs):
+        print('chat', chat)
+        """
+        Отправка события создания чата всем подписанным на это пользователям
+        """
+        chat['event'] = "on_chat_create"
+        await self.send_json(chat)
+
+    @chat_activity.groups_for_signal
+    def chat_activity(self, instance: UserModel, **kwargs):
+        yield f'pk__{instance.pk}'
+
+    @chat_activity.groups_for_consumer
+    def chat_activity(self, user=None, **kwargs):
+        if user is not None:
+            yield f'pk__{user}'
+
+    @chat_activity.serializer
+    def chat_activity(self, instance: UserModel, action, **kwargs) -> dict:
+        return dict(data=UserChatsSerializer(instance).data, action=action.value, pk=instance.pk)

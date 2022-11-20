@@ -12,11 +12,11 @@ async def test_MessageConsumer():
             'action': "start_listen",
             'request_id': 22,
         }))
-        await websocket.send(json.dumps({
-            'pk': "3",
-            'action': "subscribe_instance",
-            'request_id': 22,
-        }))
+        # await websocket.send(json.dumps({
+        #     'pk': "3",
+        #     'action': "subscribe_instance",
+        #     'request_id': 22,
+        # }))
         
         while True:
             w = await websocket.recv()

@@ -155,6 +155,8 @@ class ChatAPIView(generics.CreateAPIView):
         user.chats.add(r)
         user2 = UserModel.objects.get(id=request.data['users'][0])
         user2.chats.add(r)
+        user.save()
+        user2.save()
         
         return Response(serializer.data)
 
