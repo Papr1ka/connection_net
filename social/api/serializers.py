@@ -14,6 +14,13 @@ class UserModelSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'avatar_image', 'status', 'display_name')
 
 
+class UserModelExtendedSerializer(serializers.ModelSerializer):
+    user = UserDjangoSerizlizer()
+    class Meta:
+        model = UserModel
+        fields = ('id', 'user', 'avatar_image', 'status', 'display_name', 'chats')
+
+
 class UserModelUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
@@ -50,3 +57,10 @@ class MessageSerizlizer(serializers.ModelSerializer):
     class Meta:
         model = MessageModel
         fields = '__all__'
+
+
+class AllUserSerializer(serializers.ModelSerializer):
+    chats = ChatSerializer(many=True)
+    class Meta:
+        model = UserModel
+        fields = ('chats', 'id', 'user', 'avatar_image', 'status', 'display_name')

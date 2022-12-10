@@ -7,7 +7,7 @@ from djangochannelsrestframework.observer.generics import (ObserverModelInstance
 from djangochannelsrestframework.observer import model_observer
 
 from .models import ChatModel, MessageModel, UserModel
-from .serializers import ChatSerializer, MessageSerizlizer, UserChatsIdSerializer, UserChatsSerializer
+from .serializers import AllUserSerializer, ChatSerializer, MessageSerizlizer, UserChatsIdSerializer, UserChatsSerializer
 from django.contrib.auth.models import AnonymousUser
 
 from typing import Union
@@ -110,7 +110,8 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
         """
         Подписаться на оповещения об изменении Chat.messages с id = pk
         """
-        await self.chat_activity.subscribe(user=1)
+        print(self.scope['user'].pk)
+        await self.chat_activity.subscribe(user=self.scope['user'].pk)
     
     
     
@@ -120,7 +121,8 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
         """
         Отправка события создания чата всем подписанным на это пользователям
         """
-        chat['event'] = "on_chat_create"
+        chat['event'] = "on_user_state_change"
+        
         await self.send_json(chat)
 
     @chat_activity.groups_for_signal
@@ -134,4 +136,4 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
 
     @chat_activity.serializer
     def chat_activity(self, instance: UserModel, action, **kwargs) -> dict:
-        return dict(data=UserChatsSerializer(instance).data, action=action.value, pk=instance.pk)
+        return dict(data=AllUserSerializer(instance).data, action=action.value, pk=instance.pk)

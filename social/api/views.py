@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.response import Response
 from .models import ChatModel, MessageModel, UserModel
-from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer, UserDjangoSerizlizer, UserModelSerializer, UserModelUpdateSerializer
+from .serializers import ChatSerializer, MessageSerizlizer, UserChatsSerializer, UserDjangoSerizlizer, UserModelExtendedSerializer, UserModelSerializer, UserModelUpdateSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth.models import User
@@ -47,7 +47,7 @@ class UserApiView(generics.RetrieveUpdateAPIView):
     
     def get(self, request):
         usermodel = self.get_queryset().get(id=request.user.id)
-        data = UserModelSerializer(usermodel).data
+        data = UserModelExtendedSerializer(usermodel).data
         if usermodel.avatar_image:
             data.update({
                 'avatar_image': request.build_absolute_uri(usermodel.avatar_image.url)
@@ -103,31 +103,66 @@ class UserChatsAPIView(generics.ListCreateAPIView):
             new_chats = {'chats': []}
             chats = UserChatsSerializer(usermodel).data
             
-            for i in chats['chats']:
-                messages_length = len(i['messages'])
-                if messages_length > 0:
-                    msg = MessageModel.objects.get(id=i['messages'][-1])
-                    #msg = serializers.serialize('json', [ msg, ])
-                    msg = MessageSerizlizer(msg)
-                    last_message = [msg.data]
+            size = request.data.get("size")
+            if size:
+                try:
+                    size = int(size)
+                except:
+                    flag = False
                 else:
-                    last_message = []
-                users = i['users']
-                users.remove(request.user.id)
-                user = UserModel.objects.get(id=users[0])
-                contact_username = user.user.username
-                if user.avatar_image:
-                    avatar = user.avatar_image.url
-                else:
-                    avatar = None
-                new_chats['chats'].append({
-                    'id': i['id'],
-                    'messages': [] if messages_length == 0 else i['messages'][:min(50, messages_length)],
-                    'created_at': i['created_at'],
-                    'users': [{'id': users[0], 'username': contact_username, 'avatar_image': request.build_absolute_uri(avatar) if avatar else ''}],
-                    'last_message': last_message,
-                })
-            
+                    flag = True
+            else:
+                flag = False
+            if flag:
+                for i in chats['chats'][-size:]:
+                    messages_length = len(i['messages'])
+                    if messages_length > 0:
+                        msg = MessageModel.objects.get(id=i['messages'][-1])
+                        #msg = serializers.serialize('json', [ msg, ])
+                        msg = MessageSerizlizer(msg)
+                        last_message = [msg.data]
+                    else:
+                        last_message = []
+                    users = i['users']
+                    users.remove(request.user.id)
+                    user = UserModel.objects.get(id=users[0])
+                    contact_username = user.user.username
+                    if user.avatar_image:
+                        avatar = user.avatar_image.url
+                    else:
+                        avatar = None
+                    new_chats['chats'].append({
+                        'id': i['id'],
+                        'messages': [] if messages_length == 0 else i['messages'][:min(50, messages_length)],
+                        'created_at': i['created_at'],
+                        'users': [{'id': users[0], 'username': contact_username, 'avatar_image': request.build_absolute_uri(avatar) if avatar else ''}],
+                        'last_message': last_message,
+                    })
+            else:
+                for i in chats['chats']:
+                    messages_length = len(i['messages'])
+                    if messages_length > 0:
+                        msg = MessageModel.objects.get(id=i['messages'][-1])
+                        #msg = serializers.serialize('json', [ msg, ])
+                        msg = MessageSerizlizer(msg)
+                        last_message = [msg.data]
+                    else:
+                        last_message = []
+                    users = i['users']
+                    users.remove(request.user.id)
+                    user = UserModel.objects.get(id=users[0])
+                    contact_username = user.user.username
+                    if user.avatar_image:
+                        avatar = user.avatar_image.url
+                    else:
+                        avatar = None
+                    new_chats['chats'].append({
+                        'id': i['id'],
+                        'messages': [] if messages_length == 0 else i['messages'][:min(50, messages_length)],
+                        'created_at': i['created_at'],
+                        'users': [{'id': users[0], 'username': contact_username, 'avatar_image': request.build_absolute_uri(avatar) if avatar else ''}],
+                        'last_message': last_message,
+                    })
             return Response({'chats': new_chats})
         return Response({'error': 'Object does not exists'})
 
