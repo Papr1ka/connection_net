@@ -173,10 +173,16 @@ class ChatAPIView(generics.CreateAPIView):
     permission_classes = (IsAuthenticated, )
     
     def post(self, request):
+        print(request.data['users'], type(request.data['users']))
+        user2_id = request.data['users']
+        try:
+            int(user2_id)
+        except ValueError:
+            return Response({'error': 'Invalid user id'})
         if request.data['users'] == str(request.user.id):
-            return Response({'error': 'Invalid user list'})
+            return Response({'error': 'Invalid user id'})
         #a = ChatModel.objects.filter(users__iexact=[request.data['users'][0], request.user.id]).first()
-        a = ChatModel.objects.filter(users__in=[request.data['users']]).distinct().filter(users__in=[str(request.user.id)]).distinct()
+        a = ChatModel.objects.filter(users__in=[user2_id]).distinct().filter(users__in=[str(request.user.id)]).distinct()
         if a:
             return Response({'error': 'Chat alredy exists'})
         
@@ -188,7 +194,7 @@ class ChatAPIView(generics.CreateAPIView):
         r = serializer.save()
         user = UserModel.objects.get(id=request.user.id)
         user.chats.add(r)
-        user2 = UserModel.objects.get(id=request.data['users'][0])
+        user2 = UserModel.objects.get(id=user2_id)
         user2.chats.add(r)
         user.save()
         user2.save()

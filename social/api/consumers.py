@@ -122,6 +122,10 @@ class MessageConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
         Отправка события создания чата всем подписанным на это пользователям
         """
         chat['event'] = "on_user_state_change"
+        try:
+            await self.subscribe_to_messages_in_chat(chat['data']['chats'][-1]['id'])
+        except IndexError:
+            print("new user can't be resolved")
         
         await self.send_json(chat)
 
