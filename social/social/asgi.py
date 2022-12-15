@@ -8,16 +8,17 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
 """
 
 import os
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'social.settings')
+
 from django import setup
+
+setup()
+
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from api.middleware import TokenAuthMiddleware
 from api.routing import websocket_urlpatterns
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'social.settings')
-
-setup()
-
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
